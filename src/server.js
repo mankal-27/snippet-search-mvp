@@ -1,12 +1,15 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const snippetRoutes = require('./routes/snippetRoutes');
 const { pgPool, esClient } = require('./config/database');
 const errorHandler = require('./middlewares/errorHandler'); // Import the global error handler
 const jwt = require('jsonwebtoken');
-
+const morgan = require('morgan');
 
 const app = express();
+app.use(morgan('dev'));
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Allows us to parse incoming JSON payloads
 
 

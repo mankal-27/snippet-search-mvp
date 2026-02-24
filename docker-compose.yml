@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: snippet_search
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Limits RAM usage so your Mac doesn't freeze
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # 3. Your Node.js API
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/snippet_search
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - PORT=3000
+      - JWT_SECRET=super_secret_development_key_123
+    # ADD THESE TWO LINES FOR HOT RELOADING:
+    command: npm run dev
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules # This prevents your Mac from breaking the container's modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+# Define persistent volumes so your data survives when containers stop
+volumes:
+  pgdata:
+  esdata:

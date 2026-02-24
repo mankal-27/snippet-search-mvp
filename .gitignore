@@ -141,4 +141,8 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
-# End of https://www.toptal.com/developers/gitignore/api/node
+# MacOS hidden files
+.DS_Store
+
+# Docker compose overrides 
+docker-compose.override.yml
